@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KFlow</title>
+<style>
+:root{--bg:#0d0f17;--panel:#161926;--text:#eceef8;--muted:#8a90a8;--line:#262a3d;--accent:#6d5efc;--btn:#6d5efc;--code:#0f111b;--r:14px;--green:#22c55e;--red:#ef4444;color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;overflow-x:hidden}
+body,.card,header{transition:background .3s,color .3s,border-color .3s}
+
+/* header */
+header{display:flex;align-items:center;gap:12px;padding:12px 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:10;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.5px}
+.logo small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.sp{flex:1}
+button{font:inherit;cursor:pointer;border:0;border-radius:var(--r);transition:.15s}
+.btn{background:linear-gradient(135deg,var(--btn),color-mix(in srgb,var(--btn) 65%,#22d3ee));color:#fff;padding:8px 16px;font-weight:600;box-shadow:0 6px 18px -6px var(--btn)}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.btn.g{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none}
+.btn.s{padding:5px 12px;font-size:13px}
+input,select{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0}
+
+/* overlay + modal */
+.ov{position:fixed;inset:0;background:radial-gradient(circle at 30% 20%,rgba(109,94,252,.25),rgba(5,6,12,.75));backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.ov.on{display:flex}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.win{background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));border-radius:24px;width:min(600px,100%);max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:pop .22s ease-out}
+.wh{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--panel) 95%,transparent);backdrop-filter:blur(10px)}
+.wh::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent),#22d3ee,transparent)}
+.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;cursor:pointer;transition:.15s}
+.dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.dots i:hover{transform:scale(1.25)}
+.wb{padding:18px;display:grid;gap:14px}
+.wf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+label{font-size:13px;color:var(--muted);display:grid;gap:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input[type=color]{padding:2px;height:38px;width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+/* hero */
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px 20px;min-height:220px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 80%,color-mix(in srgb,var(--accent) 18%,transparent),transparent);pointer-events:none}
+.keyboard-silhouette{opacity:.13;pointer-events:none;user-select:none}
+.motivation{font-size:18px;font-weight:700;text-align:center;background:linear-gradient(135deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;min-height:28px;transition:opacity .4s}
+.motivation.fade{opacity:0}
+.stats-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:5px 16px;font-size:13px;display:flex;align-items:center;gap:6px}
+.pill b{color:var(--accent)}
+
+/* typing area */
+.arena{max-width:820px;margin:0 auto;padding:0 20px 32px;display:grid;gap:16px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.controls select{flex:none}
+
+/* code display */
+.code-box{background:var(--code);border:1px solid var(--line);border-radius:18px;padding:20px 22px;font:14px/1.8 ui-monospace,Menlo,Consolas,monospace;position:relative;cursor:text;min-height:120px}
+.code-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+.char{position:relative;white-space:pre}
+.char.ok{color:var(--green)}
+.char.err{color:var(--red);text-decoration:underline wavy var(--red)}
+.char.cur::after{content:'';position:absolute;left:0;top:2px;bottom:2px;width:2px;background:var(--accent);border-radius:2px;animation:blink .9s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.char.pending{color:var(--muted)}
+#typeinput{position:absolute;opacity:0;width:1px;height:1px;top:0;left:0}
+
+/* result card */
+.result{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:none;text-align:center}
+.result.on{display:block}
+.big-acc{font-size:56px;font-weight:900;letter-spacing:-2px}
+.acc-ring{width:120px;height:120px;margin:0 auto 12px}
+
+/* streak */
+.streak-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 20px;max-width:820px;margin:0 auto 0;width:100%}
+@keyframes fl{50%{transform:scale(1.14) rotate(-5deg)}}.fl{display:inline-block;animation:fl 1.8s ease-in-out infinite}
+.hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:3px;overflow-x:auto}
+.hm i{border-radius:3px;background:var(--code);border:1px solid var(--line)}
+.medals{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.medal{background:var(--code);border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:12px;opacity:.4}
+.medal.on{opacity:1;border-color:var(--accent)}
+
+/* toast */
+#toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 20px;border-radius:99px;opacity:0;transition:.25s;z-index:40;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+
+/* themes / settings */
+.swg{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.sw{display:flex;align-items:center;gap:8px;border:2px solid;border-radius:var(--r);padding:8px 10px;cursor:pointer;font-weight:600;font-size:13px;transition:.15s}
+.sw:hover{transform:translateY(-2px)}.sw i{width:13px;height:13px;border-radius:50%;flex:none}
+.mut{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg width="36" height="36" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
+    <rect width="40" height="40" rx="11" fill="url(#lg)"/>
+    <rect x="6" y="26" width="6" height="6" rx="2" fill="#fff" opacity=".9"/>
+    <rect x="14" y="26" width="6" height="6" rx="2" fill="#fff" opacity=".9"/>
+    <rect x="22" y="26" width="12" height="6" rx="2" fill="#fff" opacity=".9"/>
+    <rect x="6" y="18" width="6" height="6" rx="2" fill="#fff" opacity=".75"/>
+    <rect x="14" y="18" width="6" height="6" rx="2" fill="#fff" opacity=".75"/>
+    <rect x="22" y="18" width="6" height="6" rx="2" fill="#fff" opacity=".75"/>
+    <rect x="30" y="18" width="4" height="6" rx="2" fill="#fff" opacity=".75"/>
+    <rect x="6" y="10" width="28" height="6" rx="2" fill="#fff" opacity=".5"/>
+    </svg>
+    <div>KFlow<small>Aprende a teclear código</small></div>
+  </div>
+  <div class="sp"></div>
+  <button class="btn g s" onclick="winSettings()">🎨 Tema</button>
+  <button class="btn g s" onclick="winStats()">📊 Stats</button>
+  <button class="btn s" onclick="newRound()">▶ Nueva ronda</button>
+</header>
+
+<div class="hero">
+  <div class="hero-bg"></div>
+  <svg class="keyboard-silhouette" width="520" height="130" viewBox="0 0 520 130" style="position:absolute;bottom:0">
+    <rect x="10" y="10" width="500" height="110" rx="14" fill="var(--text)"/>
+    <rect x="22" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="58" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="94" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="130" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="166" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="202" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="238" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="274" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="310" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="346" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="382" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="418" y="22" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="454" y="22" width="46" height="22" rx="5" fill="var(--bg)"/>
+    <rect x="22" y="50" width="46" height="22" rx="5" fill="var(--bg)"/><rect x="74" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="110" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="146" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="182" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="218" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="254" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="290" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="326" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="362" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="398" y="50" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="434" y="50" width="66" height="22" rx="5" fill="var(--bg)"/>
+    <rect x="22" y="78" width="58" height="22" rx="5" fill="var(--bg)"/><rect x="86" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="122" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="158" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="194" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="230" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="266" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="302" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="338" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="374" y="78" width="30" height="22" rx="5" fill="var(--bg)"/><rect x="410" y="78" width="90" height="22" rx="5" fill="var(--bg)"/>
+  </svg>
+  <div class="motivation" id="mot">¡Cada tecla te acerca a ser mejor programador!</div>
+</div>
+
+<div class="arena">
+  <div class="stats-row" style="justify-content:flex-start">
+    <div class="pill">⚡ WPM: <b id="wpm">0</b></div>
+    <div class="pill">🎯 Precisión: <b id="acc">100%</b></div>
+    <div class="pill">⏱ Tiempo: <b id="timer">0s</b></div>
+    <div class="pill">🔥 Racha: <b id="streak-h">0 días</b></div>
+  </div>
+  <div class="controls">
+    <select id="lang-sel" onchange="newRound()">
+      <option value="js">JavaScript</option>
+      <option value="py">Python</option>
+      <option value="html">HTML</option>
+      <option value="css">CSS</option>
+      <option value="ts">TypeScript</option>
+      <option value="java">Java</option>
+      <option value="sql">SQL</option>
+      <option value="bash">Bash</option>
+      <option value="go">Go</option>
+      <option value="rust">Rust</option>
+    </select>
+    <select id="diff-sel" onchange="newRound()">
+      <option value="easy">🟢 Principiante</option>
+      <option value="medium">🟡 Intermedio</option>
+      <option value="hard">🔴 Avanzado</option>
+    </select>
+    <button class="btn g s" onclick="newRound()">↺ Otro snippet</button>
+    <span class="mut" id="snip-label"></span>
+  </div>
+
+  <div class="code-box" id="codebox" onclick="document.getElementById('typeinput').focus()">
+    <input id="typeinput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div id="chars"></div>
+  </div>
+
+  <div class="result" id="result">
+    <svg class="acc-ring" viewBox="0 0 120 120" id="ring-svg"></svg>
+    <div class="big-acc" id="big-acc">100%</div>
+    <div class="mut" id="res-detail"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+      <button class="btn" onclick="newRound()">▶ Otra ronda</button>
+      <button class="btn g" onclick="document.getElementById('result').classList.remove('on')">Ver errores</button>
+    </div>
+  </div>
+
+  <div class="streak-card">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="font-size:38px" class="fl" id="streak-emoji">💤</div>
+      <div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px" id="streak-label">0 días de racha</div>
+        <div class="mut" id="streak-msg">Practica hoy para empezar tu racha</div>
+      </div>
+      <div class="sp"></div>
+      <div style="display:flex;gap:16px;text-align:center">
+        <div><div style="font-size:20px;font-weight:800" id="best-acc">0%</div><div class="mut" style="font-size:12px">mejor precisión</div></div>
+        <div><div style="font-size:20px;font-weight:800" id="best-streak">0</div><div class="mut" style="font-size:12px">mejor racha</div></div>
+        <div><div style="font-size:20px;font-weight:800" id="total-sess">0</div><div class="mut" style="font-size:12px">sesiones</div></div>
+      </div>
+    </div>
+    <div class="mut" style="margin:12px 0 6px;font-size:12px">Actividad · últimas 16 semanas</div>
+    <div class="hm" id="heatmap"></div>
+    <div class="medals" id="medals"></div>
+  </div>
+</div>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeW()"><div class="win" id="win"></div></div>
+<div id="toast"></div>
+
+<script>
+var KEY='kflow:v1';
+var S=load();
+var SNIPS={
+js:{
+  easy:['const suma = (a, b) => a + b;\nconsole.log(suma(2, 3));','let nombre = "mundo";\nconsole.log(`Hola, ${nombre}!`);','const arr = [1, 2, 3];\narr.forEach(n => console.log(n));'],
+  medium:['fetch("https://api.example.com/data")\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));','const nums = [1,2,3,4,5];\nconst pares = nums.filter(n => n % 2 === 0);\nconst dobles = pares.map(n => n * 2);\nconsole.log(dobles);'],
+  hard:['async function fetchUser(id) {\n  try {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error("Not found");\n    return await res.json();\n  } catch (e) {\n    console.error(e);\n  }\n}','const memoize = (fn) => {\n  const cache = new Map();\n  return (...args) => {\n    const key = JSON.stringify(args);\n    if (cache.has(key)) return cache.get(key);\n    const result = fn(...args);\n    cache.set(key, result);\n    return result;\n  };\n};']
+},
+py:{
+  easy:['def saludar(nombre):\n    print(f"Hola, {nombre}!")\n\nsaludar("mundo")','numeros = [1, 2, 3, 4, 5]\nfor n in numeros:\n    print(n * 2)'],
+  medium:['def fibonacci(n):\n    a, b = 0, 1\n    while a < n:\n        print(a, end=" ")\n        a, b = b, a + b','lista = [1, 2, 3, 4, 5]\ncuadrados = [x**2 for x in lista if x % 2 == 0]\nprint(cuadrados)'],
+  hard:['class Pila:\n    def __init__(self):\n        self._items = []\n\n    def push(self, item):\n        self._items.append(item)\n\n    def pop(self):\n        return self._items.pop()\n\n    def __len__(self):\n        return len(self._items)']
+},
+html:{
+  easy:['<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <title>Mi página</title>\n</head>\n<body>\n  <h1>Hola mundo</h1>\n</body>\n</html>','<nav>\n  <a href="/">Inicio</a>\n  <a href="/about">Acerca</a>\n  <a href="/contact">Contacto</a>\n</nav>'],
+  medium:['<form action="/login" method="POST">\n  <label for="email">Email</label>\n  <input type="email" id="email" name="email" required>\n  <label for="pass">Contraseña</label>\n  <input type="password" id="pass" name="password" required>\n  <button type="submit">Entrar</button>\n</form>'],
+  hard:['<article class="card">\n  <header>\n    <img src="avatar.jpg" alt="Autor" class="avatar">\n    <div class="meta">\n      <h2 class="title">Título del artículo</h2>\n      <time datetime="2026-01-01">1 ene 2026</time>\n    </div>\n  </header>\n  <p class="excerpt">Resumen del artículo aquí.</p>\n  <footer>\n    <a href="/read" class="btn-read">Leer más</a>\n  </footer>\n</article>']
+},
+css:{
+  easy:['.boton {\n  background: #6d5efc;\n  color: white;\n  border: none;\n  border-radius: 8px;\n  padding: 10px 20px;\n  cursor: pointer;\n}','.flex-center {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 16px;\n}'],
+  medium:[':root {\n  --color-bg: #0d0f17;\n  --color-accent: #6d5efc;\n  --r: 12px;\n}\n\nbody {\n  background: var(--color-bg);\n  color: white;\n  font-family: system-ui, sans-serif;\n}'],
+  hard:['@keyframes fadeIn {\n  from {\n    opacity: 0;\n    transform: translateY(16px);\n  }\n  to {\n    opacity: 1;\n    transform: none;\n  }\n}\n\n.card {\n  animation: fadeIn .3s ease-out;\n}']
+},
+ts:{
+  easy:['function sumar(a: number, b: number): number {\n  return a + b;\n}\nconsole.log(sumar(3, 4));'],
+  medium:['interface Usuario {\n  id: number;\n  nombre: string;\n  email: string;\n}\n\nconst getUser = async (id: number): Promise<Usuario> => {\n  const res = await fetch(`/api/users/${id}`);\n  return res.json();\n};'],
+  hard:['type Result<T, E = Error> =\n  | { ok: true; value: T }\n  | { ok: false; error: E };\n\nfunction tryCatch<T>(fn: () => T): Result<T> {\n  try {\n    return { ok: true, value: fn() };\n  } catch (e) {\n    return { ok: false, error: e as Error };\n  }\n}']
+},
+java:{
+  easy:['public class Hola {\n  public static void main(String[] args) {\n    System.out.println("Hola, mundo!");\n  }\n}'],
+  medium:['import java.util.ArrayList;\n\npublic class Lista {\n  public static void main(String[] args) {\n    ArrayList<String> nombres = new ArrayList<>();\n    nombres.add("Ana");\n    nombres.add("Luis");\n    for (String n : nombres) {\n      System.out.println(n);\n    }\n  }\n}'],
+  hard:['public class Singleton {\n  private static Singleton instancia;\n\n  private Singleton() {}\n\n  public static synchronized Singleton getInstance() {\n    if (instancia == null) {\n      instancia = new Singleton();\n    }\n    return instancia;\n  }\n}']
+},
+sql:{
+  easy:['SELECT nombre, email\nFROM usuarios\nWHERE activo = 1\nORDER BY nombre ASC;','INSERT INTO productos (nombre, precio)\nVALUES ("Teclado", 59.99);'],
+  medium:['SELECT u.nombre, COUNT(p.id) AS total_pedidos\nFROM usuarios u\nLEFT JOIN pedidos p ON p.usuario_id = u.id\nGROUP BY u.id\nHAVING total_pedidos > 5\nORDER BY total_pedidos DESC;'],
+  hard:['WITH ventas_mensuales AS (\n  SELECT\n    DATE_FORMAT(fecha, "%Y-%m") AS mes,\n    SUM(total) AS ventas\n  FROM pedidos\n  WHERE estado = "completado"\n  GROUP BY mes\n)\nSELECT mes, ventas,\n  LAG(ventas) OVER (ORDER BY mes) AS mes_anterior\nFROM ventas_mensuales;']
+},
+bash:{
+  easy:['#!/bin/bash\necho "Hola, mundo!"\nls -la','for i in 1 2 3 4 5; do\n  echo "Número: $i"\ndone'],
+  medium:['#!/bin/bash\nif [ -f "config.json" ]; then\n  echo "Config encontrada"\nelse\n  echo "No existe config.json"\n  exit 1\nfi'],
+  hard:['#!/bin/bash\nbackup() {\n  local src="$1"\n  local dest="$2"\n  local date=$(date +%Y%m%d_%H%M%S)\n  tar -czf "${dest}/backup_${date}.tar.gz" "$src"\n  echo "Backup creado: backup_${date}.tar.gz"\n}\nbackup "./proyecto" "./backups"']
+},
+go:{
+  easy:['package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hola, mundo!")\n}'],
+  medium:['package main\n\nimport "fmt"\n\nfunc suma(nums ...int) int {\n  total := 0\n  for _, n := range nums {\n    total += n\n  }\n  return total\n}\n\nfunc main() {\n  fmt.Println(suma(1, 2, 3, 4, 5))\n}'],
+  hard:['package main\n\nimport (\n  "fmt"\n  "sync"\n)\n\nfunc worker(id int, wg *sync.WaitGroup) {\n  defer wg.Done()\n  fmt.Printf("Worker %d done\\n", id)\n}\n\nfunc main() {\n  var wg sync.WaitGroup\n  for i := 1; i <= 5; i++ {\n    wg.Add(1)\n    go worker(i, &wg)\n  }\n  wg.Wait()\n}']
+},
+rust:{
+  easy:['fn main() {\n  println!("Hola, mundo!");\n  let x: i32 = 42;\n  println!("El número es: {}", x);\n}'],
+  medium:['fn fibonacci(n: u32) -> u64 {\n  match n {\n    0 => 0,\n    1 => 1,\n    _ => fibonacci(n - 1) + fibonacci(n - 2),\n  }\n}\n\nfn main() {\n  for i in 0..10 {\n    println!("{}", fibonacci(i));\n  }\n}'],
+  hard:['use std::collections::HashMap;\n\nfn frecuencias(texto: &str) -> HashMap<char, usize> {\n  let mut mapa = HashMap::new();\n  for c in texto.chars() {\n    *mapa.entry(c).or_insert(0) += 1;\n  }\n  mapa\n}\n\nfn main() {\n  let f = frecuencias("hola mundo");\n  println!("{:?}", f);\n}']
+}
+};
+
+var MOTIVATIONS=['¡Cada tecla te acerca a ser mejor programador!','Los grandes devs también empezaron desde cero.','La práctica diaria construye habilidades para siempre.','Un snippet a la vez, una habilidad a la vez.','¡Tu racha depende de ti hoy!','El código fluye cuando los dedos vuelan.','Precisión antes que velocidad. Siempre.','¡Estás construyendo memoria muscular ahora mismo!','Los errores de hoy son las lecciones de mañana.','¡Tú puedes. Sigue tecleando!'];
+
+var PRE=[['Medianoche','#0d0f17','#161926','#eceef8','#6d5efc','#6d5efc'],['Océano','#07131f','#0d2236','#e6f4ff','#22d3ee','#0ea5e9'],['Bosque','#0b1510','#12241a','#e8f7ee','#34d399','#10b981'],['Atardecer','#1a0f14','#2a1720','#fff0ea','#fb7185','#f97316'],['Neón','#0a0014','#150027','#f5e8ff','#e879f9','#d946ef'],['Drácula','#282a36','#343746','#f8f8f2','#bd93f9','#bd93f9'],['Nord','#2e3440','#3b4252','#eceff4','#88c0d0','#5e81ac'],['Cyber','#050505','#101010','#e8ffe8','#00ff9c','#00cc7d'],['Claro','#f4f5fa','#ffffff','#14161f','#6d5efc','#6d5efc'],['Rosa','#fff1f5','#ffffff','#3b1020','#ec4899','#db2777']];
+
+var target='',typed=0,errors=0,startTime=null,timerInt=null,done=false;
+
+function load(){try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);if(d)return d}}catch(e){}return{cfg:{accent:'#6d5efc',btn:'#6d5efc',bg:null,panel:null,text:null,radius:14,theme:'dark'},act:{},sessions:[],bestAcc:0,bestStreak:0,totalSess:0}}
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function $(i){return document.getElementById(i)}
+
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on')},2000)}
+
+function lum(x){var n=parseInt((x||'#000').replace('#',''),16)||0;return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255}
+
+function applyCfg(){var r=document.documentElement,c=S.cfg,s=r.style;s.setProperty('--accent',c.accent);s.setProperty('--btn',c.btn);s.setProperty('--r',(c.radius||14)+'px');['bg','panel','text'].forEach(function(k){if(c[k])s.setProperty('--'+k,c[k]);else s.removeProperty('--'+k)});if(c.theme)r.setAttribute('data-theme',c.theme);else r.removeAttribute('data-theme')}
+
+function applyCols(bg,p,t,a,b){Object.assign(S.cfg,{bg:bg,panel:p,text:t,accent:a,btn:b,theme:lum(bg)<.5?'dark':'light'});save();applyCfg();if(document.getElementById('c_a'))winSettings()}
+
+// motivation rotator
+var motIdx=0;
+function rotateMot(){var el=$('mot');el.classList.add('fade');setTimeout(function(){motIdx=(motIdx+1)%MOTIVATIONS.length;el.textContent=MOTIVATIONS[motIdx];el.classList.remove('fade')},400)}
+setInterval(rotateMot,5000);
+
+function dk(t){var d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+function streakData(){var a=S.act||{},ks=Object.keys(a).filter(function(k){return a[k]>0}).sort(),best=0,run=0;ks.forEach(function(k,i){run=i&&Math.round((new Date(k)-new Date(ks[i-1]))/864e5)===1?run+1:1;if(run>best)best=run});var d=new Date(),cur=0,today=a[dk(d)]||0;if(!today)d.setDate(d.getDate()-1);while(a[dk(d)]){cur++;d.setDate(d.getDate()-1)}return{cur:cur,best:best,today:today}}
+
+function lvl(c){return c>=30?['👑','Leyenda']:c>=14?['🚀','Imparable']:c>=7?['⚡','En racha']:c>=3?['🔥','Constante']:c>=1?['🌱','Arrancando']:['💤','Sin racha']}
+
+function drawStreak(){var sd=streakData(),l=lvl(sd.cur);
+$('streak-emoji').textContent=l[0];
+$('streak-label').textContent=sd.cur+' '+(sd.cur===1?'día':'días')+' de racha';
+$('streak-msg').textContent=l[1]+' · '+(sd.today?'¡Hoy ya practicaste! Sigue así ✓':(sd.cur?'Practica hoy para no perder tu racha':'Practica hoy para empezar tu racha'));
+$('streak-h').textContent=sd.cur+' días';
+$('best-acc').textContent=(S.bestAcc||0)+'%';
+$('best-streak').textContent=sd.best;
+$('total-sess').textContent=S.totalSess||0;
+// heatmap
+var now=new Date(),st=new Date();st.setDate(st.getDate()-111);st.setDate(st.getDate()-((st.getDay()+6)%7));
+var cells='',d=new Date(st),a=S.act||{};
+while(d<=now){var k=dk(d),v=a[k]||0,lv=v>=4?4:v,bg=lv?" style='background:color-mix(in srgb,var(--accent) "+[0,30,55,80,100][lv]+"%, var(--code));border-color:transparent'":"";cells+="<i title='"+(v?v+'% prec.':'sin práctica')+" · "+d.toLocaleDateString()+"'"+bg+"></i>";d.setDate(d.getDate()+1)}
+$('heatmap').innerHTML=cells;
+// medals
+var MEDALS=[['🥇','Primer intento',S.totalSess>=1],['📅','3 días de racha',sd.best>=3],['⚡','7 días seguidos',sd.best>=7],['🚀','14 días seguidos',sd.best>=14],['👑','30 días seguidos',sd.best>=30],['🎯','Precisión 90%+',S.bestAcc>=90],['💯','Precisión 100%',S.bestAcc>=100],['🏃','10 sesiones',S.totalSess>=10],['🔥','50 sesiones',S.totalSess>=50]];
+$('medals').innerHTML=MEDALS.map(function(m){return "<span class='medal"+(m[2]?' on':'')+"' title='"+m[1]+"'>"+m[0]+" "+m[1]+"</span>"}).join('')}
+
+function newRound(){
+  var lang=$('lang-sel').value,diff=$('diff-sel').value;
+  var pool=SNIPS[lang]&&SNIPS[lang][diff];
+  if(!pool||!pool.length)pool=SNIPS.js.easy;
+  target=pool[Math.floor(Math.random()*pool.length)];
+  typed=0;errors=0;startTime=null;done=false;
+  clearInterval(timerInt);
+  $('timer').textContent='0s';
+  $('wpm').textContent='0';
+  $('acc').textContent='100%';
+  $('result').classList.remove('on');
+  $('snip-label').textContent=lang.toUpperCase()+' · '+{easy:'Principiante',medium:'Intermedio',hard:'Avanzado'}[diff];
+  renderChars();
+  $('typeinput').value='';
+  $('typeinput').focus();
+}
+
+function renderChars(){
+  var html='';
+  for(var i=0;i<target.length;i++){
+    var ch=target[i],cls='char pending';
+    if(i<typed)cls='char ok';
+    if(S.errSet&&S.errSet[i])cls='char err';
+    if(i===typed&&!done)cls+=' cur';
+    var disp=ch===' '?'&nbsp;':ch==='\n'?'↵\n':ch.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    html+="<span class='"+cls+"'>"+disp+"</span>";
+  }
+  $('chars').innerHTML=html;
+}
+
+$('typeinput').addEventListener('input',function(e){
+  if(done)return;
+  var val=this.value;
+  if(!val.length)return;
+  if(!startTime){startTime=Date.now();timerInt=setInterval(updateTimer,500)}
+  var ch=val[val.length-1];
+  var expected=target[typed];
+  if(ch===expected){typed++;if(!S.errSet)S.errSet={}}
+  else{if(!S.errSet)S.errSet={};S.errSet[typed]=true;errors++;typed++}
+  this.value='';
+  if(typed>=target.length)finish();
+  else renderChars();
+  updateLive();
+});
+
+$('typeinput').addEventListener('keydown',function(e){
+  if(e.key==='Backspace'){e.preventDefault();if(typed>0){typed--;if(S.errSet)delete S.errSet[typed];renderChars()}}
+});
+
+function updateLive(){
+  var total=typed,acc=total?Math.round((total-errors)/total*100):100;
+  $('acc').textContent=acc+'%';
+  if(startTime){var secs=(Date.now()-startTime)/1000,wpm=Math.round((typed/5)/(secs/60));$('wpm').textContent=wpm}
+}
+
+function updateTimer(){if(startTime)$('timer').textContent=Math.round((Date.now()-startTime)/1000)+'s'}
+
+function finish(){
+  done=true;clearInterval(timerInt);
+  var total=target.length,acc=Math.round((total-errors)/total*100);
+  var secs=(Date.now()-startTime)/1000,wpm=Math.round((total/5)/(secs/60));
+  // save session
+  if(!S.act)S.act={};
+  var today=dk(Date.now());
+  S.act[today]=Math.max(S.act[today]||0,acc);
+  S.bestAcc=Math.max(S.bestAcc||0,acc);
+  S.totalSess=(S.totalSess||0)+1;
+  var sd=streakData();S.bestStreak=Math.max(S.bestStreak||0,sd.cur);
+  save();drawStreak();
+  // result card
+  var r=Math.round(acc/100*47);
+  var circ=2*Math.PI*47;
+  var col=acc>=90?'var(--green)':acc>=70?'#eab308':'var(--red)';
+  $('ring-svg').innerHTML="<circle cx='60' cy='60' r='47' fill='none' stroke='var(--line)' stroke-width='8'/><circle cx='60' cy='60' r='47' fill='none' stroke='"+col+"' stroke-width='8' stroke-dasharray='"+r*circ/47+" "+circ+"' stroke-linecap='round' transform='rotate(-90 60 60)'/>";
+  $('big-acc').textContent=acc+'%';
+  $('big-acc').style.color=col;
+  $('res-detail').textContent='⏱ '+secs.toFixed(1)+'s · ⚡ '+wpm+' WPM · ❌ '+errors+' errores';
+  $('result').classList.add('on');
+  if(acc===100)toast('¡Perfecto! Sin errores 🎉');
+  else if(acc>=90)toast('¡Excelente precisión! 🔥');
+  else if(acc>=70)toast('¡Buen intento! Sigue practicando 💪');
+  else toast('No te rindas, inténtalo otra vez 🌱');
+  renderChars();
+}
+
+// win modal
+function win(title,body,foot){$('win').innerHTML='<div class="wh"><div class="dots"><i onclick="closeW()"></i><i></i><i></i></div><b>'+title+'</b></div><div class="wb">'+body+'</div>'+(foot?'<div class="wf">'+foot+'</div>':"");$('ov').classList.add('on')}
+function closeW(){$('ov').classList.remove('on')}
+
+function winSettings(){var c=S.cfg,d=getComputedStyle(document.documentElement);function g(k){var v=c[k];return/^#[0-9a-f]{6}$/i.test(v||'')?v:(d.getPropertyValue('--'+k).trim()||'#000000')}
+win('Personalización','<div class="mut">Temas</div><div class="swg">'+PRE.map(function(p,i){return '<button class="sw" onclick="applyCols(\''+p[1]+'\',\''+p[2]+'\',\''+p[3]+'\',\''+p[4]+'\',\''+p[5]+'\')" style="background:'+p[2]+';color:'+p[3]+';border-color:'+p[4]+'"><i style="background:'+p[4]+'"></i>'+p[0]+'</button>'}).join('')+'</div><div class="two"><label>Acento<input type="color" id="c_a" value="'+g('accent')+'" oninput="S.cfg.accent=this.value;S.cfg.btn=this.value;save();applyCfg()"></label><label>Fondo<input type="color" id="c_bg" value="'+g('bg')+'" oninput="S.cfg.bg=this.value;save();applyCfg()"></label><label>Paneles<input type="color" id="c_p" value="'+g('panel')+'" oninput="S.cfg.panel=this.value;save();applyCfg()"></label><label>Texto<input type="color" id="c_t" value="'+g('text')+'" oninput="S.cfg.text=this.value;save();applyCfg()"></label></div><label>Redondeo: <span id="rv">'+(c.radius||14)+'</span>px<input type="range" min="0" max="28" value="'+(c.radius||14)+'" oninput="S.cfg.radius=+this.value;$(\'rv\').textContent=this.value;save();applyCfg()"></label>','<button class="btn g" onclick="S.cfg={accent:\'#6d5efc\',btn:\'#6d5efc\',bg:null,panel:null,text:null,radius:14,theme:\'dark\'};save();applyCfg();winSettings()">Restablecer</button><button class="btn" onclick="closeW()">Listo</button>')}
+
+function winStats(){var sessions=S.totalSess||0,ba=S.bestAcc||0,sd=streakData(),m={};(S.sessions||[]).forEach(function(s){m[s.lang]=(m[s.lang]||0)+1});win('Tus estadísticas','<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center"><div class="card" style="padding:14px"><div style="font-size:28px;font-weight:800">'+sessions+'</div><div class="mut">sesiones</div></div><div class="card" style="padding:14px"><div style="font-size:28px;font-weight:800">'+ba+'%</div><div class="mut">mejor precisión</div></div><div class="card" style="padding:14px"><div style="font-size:28px;font-weight:800">'+sd.best+'</div><div class="mut">mejor racha</div></div></div><div class="mut" style="margin-top:4px">Lenguajes practicados</div>'+(Object.keys(m).length?Object.keys(m).sort(function(a,b){return m[b]-m[a]}).map(function(k){return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span style="font-weight:700;width:80px">'+k.toUpperCase()+'</span><div style="flex:1;background:var(--code);border-radius:99px"><div style="height:8px;border-radius:99px;background:var(--accent);width:'+(m[k]/Math.max.apply(null,Object.values(m))*100)+'%"></div></div><b>'+m[k]+'</b></div>'}).join(''):'<div class="mut">Aún no hay sesiones registradas</div>'),'<button class="btn" onclick="closeW()">Cerrar</button>')}
+
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeW()});
+document.addEventListener('click',function(e){if(e.target.closest('#codebox'))$('typeinput').focus()});
+
+S.errSet={};
+applyCfg();
+newRound();
+drawStreak();
+</script>
+</body>
+</html>
